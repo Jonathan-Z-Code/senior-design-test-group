@@ -41,24 +41,27 @@ volatile int rightCount = 0;
 volatile int targetValue = 0;
 // end of test variables for encoder readings
 
-
+// counting rising edges from the encoder output
 void leftEncoderUpdate(void) {
   leftCount++;
 }
 
+// counting rising edges from the encoder output
 void rightEncoderUpdate(void) {
   rightCount++;
 }
 
+// I'm currently not using this timer peripheral, maybe we can 
+// use this as a watchdog timer???
 void Timer0_ISR(void) {
   // timer automatically resets auto-reload value into timer0 register
 }
 
 
-// esp_now callback function when a esp_now packet is received
+// esp_now callback function when as esp_now packet is received
 void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
 
-  // copy contents of incoming packet to the struct_message
+  // copy contents of incoming packet to the transmit_message
   memcpy(&recvData, incomingData, sizeof(transmit_message));
 
   // debug print out received values
@@ -69,17 +72,19 @@ void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
   //Serial.println(IMU_data.y_value);
   //Serial.println(); // end with newline to seperate different incoming packets
 
-  // update motor control flag
+  // limit the target value between 0-28
   targetValue = (recvData.y_value >> 4) - 4;
   if(targetValue < 0) {
     targetValue = 0;
   }
+
   updateTarget = true;
 
 }
 
 
 void setup() {
+
   // Initialize Serial Monitor
   Serial.begin(115200);
   
@@ -134,10 +139,12 @@ bool negativeFeedback = false;
 #define LEFT_MOTOR_PWM (23)
 #define RIGHT_MOTOR_PWM (22)
 
+
 void loop() {
   
   currentTime = millis();
 
+  // every UPDATE_INTERVAL milliseconds, run the motor algorithm 
   if(currentTime - previousTime >= UPDATE_INTERVAL) {
     previousTime = currentTime;
   
@@ -233,12 +240,14 @@ void loop() {
     //Serial.print(deltaRight);
     //Serial.println();
     
+    // store the car's data into the data_message struct
     outgoingData.deltaLeft = deltaLeft;
     outgoingData.deltaRight = deltaRight;
     outgoingData.targetValue = targetValue;
     outgoingData.leftMotorValue = leftMotorValue;
     outgoingData.rightMotorValue = rightMotorValue;
 
+    // send the resulting data OTA (over-the-air) to the transmitter ESP32
     esp_err_t result = esp_now_send(controllerAddress, (uint8_t *) &outgoingData, sizeof(outgoingData));
     if(result == ESP_OK) {
       Serial.print("success! \n");
