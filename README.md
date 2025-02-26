@@ -1,6 +1,6 @@
 Things to do:
 
-PID  - Juan < br />
+PID  - Juan <br />
 Possible GPS navigation??? - Talk to profs about it
 Gyroscope integration??? - Jonathan
 
