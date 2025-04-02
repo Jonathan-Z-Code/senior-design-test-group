@@ -17,6 +17,7 @@
 
 GPS gps;
 
+/* configuration struct for gps class */
 gps_config_t config = {
     .baud_rate = 38400,                     /* default baud rate for BE-880 GPS module */
     .data_period_ms = DATA_PERIOD_1000MS,   /* default data period for BE-880 GPS module */
